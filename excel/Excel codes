@@ -1,1 +1,52 @@
+1. Customer Orders - Worksheet Change 
 
+Private Sub Worksheet_Change(ByVal Target As Range)
+
+    'runs logic tied to cell B3
+    If Target.Address = "$B$3" Then
+    Range("CustomerOrderInfo[#All]").AdvancedFilter Action:=xlFilterInPlace, _
+        CriteriaRange:=Range("'Customer Dashboard'!Criteria"), Unique:=False
+    End If
+    
+    UpdateCustomerOrderInfo
+End Sub
+
+
+2. General UpdateCustomerOrderInfo
+
+Public Sub UpdateCustomerOrderInfo()
+
+    On Error GoTo noCustomerData
+    
+    ActiveWorkbook.SlicerCaches("Slicer_Order_Month").ClearManualFilter
+    ActiveSheet.Shapes.Range(Array("Chart 1")).Visible = True
+    ActiveSheet.Shapes.Range(Array("Order Month")).Visible = True
+    
+    ' update Chart data based on Customer Name
+    
+    ' declare some variables
+    Dim pt As PivotTable        'store order pivot table
+    Dim field As PivotField     'store a reference to the pt filter field
+    Dim newCus As String        'store the selected customer name
+    
+    'referencing the pivot table
+    Set pt = Worksheets("Yearly Orders PT").PivotTables("YearlyOrdersPT")
+    Set field = pt.PivotFields("Customer Name")
+    newCus = Worksheets("Customer Dashboard").Range("B3").Value
+    
+    'Apply the filters
+    With pt
+        field.ClearAllFilters       'remove current filters
+        field.CurrentPage = newCus  'move to new table refrenced
+        .RefreshTable               'refresh with new entry
+    End With
+    
+pDone:
+    Exit Sub
+    
+noCustomerData:
+    MsgBox ("The customer does not exist")
+    
+    ActiveSheet.Shapes.Range(Array("Chart 1")).Visible = False
+    ActiveSheet.Shapes.Range(Array("Order Month")).Visible = False
+    End Sub
